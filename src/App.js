@@ -1,14 +1,6 @@
 import React, {Component} from 'react';
 import './App.css';
 import axios from 'axios';
-import Select from 'react-select'
-
-
-const options = [
-    {value: 'chocolate', label: 'Chocolate'},
-    {value: 'strawberry', label: 'Strawberry'},
-    {value: 'vanilla', label: 'Vanilla'}
-]
 
 class App extends Component {
 
@@ -23,6 +15,8 @@ class App extends Component {
             page: '',
             type: '',
             number: '',
+            searchnationalCode: '',
+            searchRegistrationCode: '',
             accountNumber: null,
             objname: '',
             objnationalCode: '',
@@ -110,6 +104,10 @@ class App extends Component {
                 return this.addLegalPage();
             case 'addReal':
                 return this.addRealPage();
+            case 'showReal':
+                return this.showRealPersonPage();
+            case 'showLegal':
+                return this.showLegalPersonPage();
             default:
                 return null
         }
@@ -137,6 +135,7 @@ class App extends Component {
                        onChange={(e) => this.setState({objaccountAmount: e.target.value})}/>
 
             </label>
+            <br/>
             <button onClick={this.addAccountOnClick.bind(this)}>
                 ADD
             </button>
@@ -187,6 +186,7 @@ class App extends Component {
                 <button onClick={this.handleNumberInput.bind(this)}>add number</button>
 
             </label>
+            <br/>
             <button onClick={this.saveRealOnClick.bind(this)}>
                 ADD
             </button>
@@ -200,6 +200,7 @@ class App extends Component {
                 : <label>{this.state.title}</label>
             }
             <label>
+                <br/>
                 نام :
                 <input type="text" name="name" value={this.state.objname}
                        onChange={(e) => this.setState({objname: e.target.value})}/>
@@ -248,22 +249,22 @@ class App extends Component {
                     : <label>{this.state.title}</label>
                 }
                 <label>
+                    <br/>
                     شماره حساب:
                     <input type="text" name="accountNumber" value={this.state.accountNumber}
                            onChange={(e) => this.setState({accountNumber: e.target.value})}/>
                     <br/>
                     <button onClick={this.showAccount.bind(this)}>show</button>
 
-                    <code>{JSON.stringify(this.state.account)}</code>
-
                 </label>
+                <label>  <code>{JSON.stringify(this.state.account)}</code> </label>
             </div>
         );
     }
 
     showAccount(event) {
-        let obj ={
-            accountNumber : this.state.accountNumber
+        let obj = {
+            accountNumber: this.state.accountNumber
         }
 
         let options = {
@@ -276,6 +277,7 @@ class App extends Component {
 
         axios(options).then((response) => {
             if (response.data.status === 'Ok') {
+                this.setState({title: response.data.notificationMessage});
                 const account = {
                     accountNumber: response.data.responseObject.accountNumber,
                     accountAmount: response.data.responseObject.accountAmount,
@@ -285,6 +287,134 @@ class App extends Component {
                 };
                 this.setState({
                     account: account
+                });
+
+            } else if (response.data.status === 'Error') {
+                this.setState({title: response.data.exception.fullMessage});
+            } else {
+                this.setState({title: "خطا در برقراری ارتباط با سرور"});
+            }
+        })
+            .catch(e => {
+
+                console.log(e);
+
+            }); // axios
+
+    }
+
+    showRealPersonPage() {
+        return (
+            <div>
+                {(this.state.realPerson === '') ?
+                    null
+                    : <label>{this.state.title}</label>
+                }
+                <label>
+                    <br/>
+                    كد ملي:
+                    <input type="text" name="searchnationalCode" value={this.state.searchnationalCode}
+                           onChange={(e) => this.setState({searchnationalCode: e.target.value})}/>
+                    <br/>
+                    <button onClick={this.showRealPerson.bind(this)}>show</button>
+                </label>
+                <label>
+                    <code>{JSON.stringify(this.state.realPerson)}</code>
+                </label>
+            </div>
+        );
+    }
+
+    showRealPerson(event) {
+        let obj = {
+            nationalCode: this.state.searchnationalCode
+        }
+
+        let options = {
+            method: 'POST',
+            url: 'http://localhost:8080/ws/uniqueRealSearch?nationalCode=' + this.state.searchnationalCode,
+            'content-type': 'application/json',
+            withCredentials: true,
+            data: obj
+        };
+
+        axios(options).then((response) => {
+            if (response.data.status === 'Ok') {
+                this.setState({title: response.data.notificationMessage});
+                const realPerson = {
+                    name: response.data.responseObject.name,
+                    lastName: response.data.responseObject.lastName,
+                    nationalCode: response.data.responseObject.nationalCode,
+                    eMailAddress: response.data.responseObject.eMailAddress,
+                    address: response.data.responseObject.address,
+                    numbers: response.data.responseObject.numbers,
+                    accounts: response.data.responseObject.accounts
+                };
+                this.setState({
+                    realPerson: realPerson
+                });
+
+            } else if (response.data.status === 'Error') {
+                this.setState({title: response.data.exception.fullMessage});
+            } else {
+                this.setState({title: "خطا در برقراری ارتباط با سرور"});
+            }
+        })
+            .catch(e => {
+
+                console.log(e);
+
+            }); // axios
+
+    }
+
+    showLegalPersonPage() {
+        return (
+            <div>
+                {(this.state.legalPerson === '') ?
+                    null
+                    : <label>{this.state.title}</label>
+                }
+                <label>
+                    <br/>
+                    كد ثبت:
+                    <input type="text" name="searchRegistrationCode" value={this.state.searchRegistrationCode}
+                           onChange={(e) => this.setState({searchRegistrationCode: e.target.value})}/>
+                    <br/>
+                    <button onClick={this.showLegalPerson.bind(this)}>show</button>
+                </label>
+                <label> <code>{JSON.stringify(this.state.legalPerson)}</code> </label>
+            </div>
+        );
+    }
+
+    showLegalPerson(event) {
+        let obj = {
+            registrationCode: this.state.searchRegistrationCode
+        }
+
+        let options = {
+            method: 'POST',
+            url: 'http://localhost:8080/ws/uniqueLegalSearch?registrationCode=' + this.state.searchRegistrationCode,
+            'content-type': 'application/json',
+            withCredentials: true,
+            data: obj
+        };
+
+        axios(options).then((response) => {
+            if (response.data.status === 'Ok') {
+                this.setState({title: response.data.notificationMessage});
+                const legalPerson = {
+                    name: response.data.responseObject.name,
+                    openingDate: response.data.responseObject.openingDate,
+                    registrationCode: response.data.responseObject.registrationCode,
+                    eMailAddress: response.data.responseObject.eMailAddress,
+                    address: response.data.responseObject.address,
+                    numbers: response.data.responseObject.numbers,
+                    accounts: response.data.responseObject.accounts
+                };
+                this.setState({
+                    legalPerson: legalPerson
                 });
 
             } else if (response.data.status === 'Error') {
@@ -323,7 +453,7 @@ class App extends Component {
         axios(options)
             .then((response) => {
                 if (response.data.status === 'Ok') {
-                    this.setState({title: "ok"});
+                    this.setState({title: response.data.notificationMessage});
                 } else if (response.data.status === 'Error') {
                     this.setState({title: response.data.exception.fullMessage});
                 } else {
@@ -357,7 +487,7 @@ class App extends Component {
         axios(options)
             .then((response) => {
                 if (response.data.status === 'Ok') {
-                    this.setState({title: "ok"});
+                    this.setState({title: response.data.notificationMessage});
                 } else if (response.data.status === 'Error') {
                     this.setState({title: response.data.exception.fullMessage});
                 } else {
@@ -387,7 +517,7 @@ class App extends Component {
         axios(options)
             .then((response) => {
                 if (response.data.status === 'Ok') {
-                    this.setState({title: "ok"});
+                    this.setState({title: response.data.notificationMessage});
                 } else if (response.data.status === 'Error') {
                     this.setState({title: response.data.exception.fullMessage});
                 } else {
@@ -406,6 +536,7 @@ class App extends Component {
         }
 
             <label>
+                <br/>
                 user:
                 <input type="text" name="user" value={this.state.user}
                        onChange={(e) => this.setState({user: e.target.value})}/>
