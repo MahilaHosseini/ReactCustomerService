@@ -23,6 +23,7 @@ class App extends Component {
             page: '',
             type: '',
             number: '',
+            accountNumber: null,
             objname: '',
             objnationalCode: '',
             objaddress: null,
@@ -103,6 +104,8 @@ class App extends Component {
         switch (this.state.page) {
             case 'addAccount':
                 return this.addAccountPage();
+            case 'showAccountInfo':
+                return this.showAccoutPage();
             case 'addLegal':
                 return this.addLegalPage();
             case 'addReal':
@@ -116,7 +119,8 @@ class App extends Component {
         objnumbers: this.state.objnumbers.push({number: this.state.number, type: this.state.type})
 
     };
-    addAccountPage(){
+
+    addAccountPage() {
         return <div>
             {(this.state.title === '') ?
                 null
@@ -138,6 +142,7 @@ class App extends Component {
             </button>
         </div>
     }
+
     addRealPage() {
 
 
@@ -235,6 +240,67 @@ class App extends Component {
         </div>
     }
 
+    showAccoutPage() {
+        return (
+            <div>
+                {(this.state.account === '') ?
+                    null
+                    : <label>{this.state.title}</label>
+                }
+                <label>
+                    شماره حساب:
+                    <input type="text" name="accountNumber" value={this.state.accountNumber}
+                           onChange={(e) => this.setState({accountNumber: e.target.value})}/>
+                    <br/>
+                    <button onClick={this.showAccount.bind(this)}>show</button>
+
+                    <code>{JSON.stringify(this.state.account)}</code>
+
+                </label>
+            </div>
+        );
+    }
+
+    showAccount(event) {
+        let obj ={
+            accountNumber : this.state.accountNumber
+        }
+
+        let options = {
+            method: 'POST',
+            url: 'http://localhost:8080/ws/search?accountNumber=' + this.state.accountNumber,
+            'content-type': 'application/json',
+            withCredentials: true,
+            data: obj
+        };
+
+        axios(options).then((response) => {
+            if (response.data.status === 'Ok') {
+                const account = {
+                    accountNumber: response.data.responseObject.accountNumber,
+                    accountAmount: response.data.responseObject.accountAmount,
+                    openingDate: response.data.responseObject.openingDate,
+                    facilities: response.data.responseObject.facilities,
+                    transactions: response.data.responseObject.transactions
+                };
+                this.setState({
+                    account: account
+                });
+
+            } else if (response.data.status === 'Error') {
+                this.setState({title: response.data.exception.fullMessage});
+            } else {
+                this.setState({title: "خطا در برقراری ارتباط با سرور"});
+            }
+        })
+            .catch(e => {
+
+                console.log(e);
+
+            }); // axios
+
+    }
+
     saveLegalOnClick() {
         let obj = {
             name: this.state.objname,
@@ -302,6 +368,7 @@ class App extends Component {
                 this.setState({title: "خطا در برقراری ارتباط با سرور"});
             });
     }
+
     addAccountOnClick() {
         let obj = {
             code: this.state.objcode,
@@ -331,6 +398,7 @@ class App extends Component {
                 this.setState({title: "خطا در برقراری ارتباط با سرور"});
             });
     }
+
     loginPage() {
         return (<header className="App-header">{(this.state.title === '') ?
             null
